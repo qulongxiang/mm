@@ -1,45 +1,842 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+}
+
 #root {
-	max-width: 1280px;
-	margin: 0 auto;
-	padding: 2rem;
-	text-align: center;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.logo {
-	height: 6em;
-	padding: 1.5em;
-	will-change: filter;
-	transition: filter 300ms;
-}
-.logo:hover {
-	filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-	filter: drop-shadow(0 0 2em #61dafbaa);
-}
-.logo.cloudflare:hover {
-	filter: drop-shadow(0 0 2em #f6821faa);
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-@keyframes logo-spin {
-	from {
-		transform: rotate(0deg);
-	}
-	to {
-		transform: rotate(360deg);
-	}
+.header {
+  text-align: center;
+  color: white;
+  margin-bottom: 30px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-	a:nth-of-type(2) .logo {
-		animation: logo-spin infinite 20s linear;
-	}
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
 .card {
-	padding: 2em;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
 }
 
-.read-the-docs {
-	color: #888;
+.card h3 {
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.stat {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.stat-value.highlight {
+  color: #667eea;
+}
+
+.stat-value.positive {
+  color: #10b981;
+}
+
+.stat-value.negative {
+  color: #ef4444;
+}
+
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.subject-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.subject-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.subject-item.selected {
+  background: #667eea;
+  color: white;
+}
+
+.subject-name {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.trend {
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.trend.positive {
+  color: #10b981;
+}
+
+.trend.negative {
+  color: #ef4444;
+}
+
+.subject-avg {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.subject-item.selected .subject-avg {
+  color: rgba(255,255,255,0.8);
+}
+
+/* 最新成绩概览 */
+.latest-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.exam-info h4 {
+  margin: 0 0 5px 0;
+  color: #667eea;
+  font-size: 1.2rem;
+}
+
+.overall-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.overall-stats .stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-width: 150px;
+}
+
+.overall-stats .stat-label {
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0;
+  display: inline;
+}
+
+.overall-stats .stat-value {
+  font-weight: bold;
+  font-size: 1.1rem;
+  display: inline;
+}
+
+/* 各科成绩趋势 */
+.subject-trends {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subject-trend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.subject-trend-item:hover {
+  background: #e9ecef;
+}
+
+.score-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.latest-score {
+  font-weight: bold;
+  color: #666;
+}
+
+.trend-indicator {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.trend-indicator.positive {
+  color: #10b981;
+}
+
+.trend-indicator.negative {
+  color: #ef4444;
+}
+
+/* 统计分析 */
+.statistics {
+  margin-bottom: 20px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: scale(1.05);
+}
+
+.stat-item .stat-label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+  color: #666;
+}
+
+.stat-item .stat-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.filters {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  flex-wrap: wrap;
+}
+
+.filters label {
+  font-weight: 600;
+  color: #333;
+}
+
+.filters select {
+  padding: 10px 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.filters select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.score-table-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.score-table-section h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.score-table th,
+.score-table td {
+  padding: 15px 12px;
+  text-align: center;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.score-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+  position: sticky;
+  top: 0;
+}
+
+.score-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.exam-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.avg {
+  font-weight: bold;
+  color: #667eea;
+}
+
+.compare {
+  font-weight: 600;
+}
+
+.compare.up {
+  color: #10b981;
+}
+
+.compare.down {
+  color: #ef4444;
+}
+
+.compare.same {
+  color: #666;
+}
+
+.charts-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 400px;
+}
+
+.footer {
+  text-align: center;
+  padding: 30px;
+  color: white;
+  opacity: 0.8;
+}
+
+.loading, .error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.error {
+  color: #ef4444;
+}
+
+@media (max-width: 1024px) {
+  .overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .charts-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 新增统计样式 */
+.statistics {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* 各科统计 */
+.subject-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subject-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.subject-stat-item:hover {
+  background: #e9ecef;
+}
+
+.subject-stats-details {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* 年级对比 */
+.grade-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.grade-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.grade-stat-item:hover {
+  background: #e9ecef;
+}
+
+.grade-stats-details {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* 深度分析维度 */
+.advanced-analysis {
+  margin-bottom: 20px;
+}
+
+.advanced-analysis h2 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+/* 达标率统计 */
+.achievement-rates {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rate-item {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.rate-item.excellent .rate-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.rate-item.good .rate-fill {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.rate-item.pass .rate-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.rate-label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.rate-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 10px;
+}
+
+.rate-bar {
+  width: 100%;
+  height: 10px;
+  background: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.rate-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+/* 学科均衡度 */
+.balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.balance-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-value.warning {
+  color: #f59e0b;
+}
+
+.stat-value.good {
+  color: #10b981;
+}
+
+.balance-comment {
+  margin-top: 10px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* 学习曲线 */
+.learning-curve {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.curve-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.trend-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.trend-badge.positive {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.trend-badge.good {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.trend-badge.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.trend-badge.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.curve-comment {
+  margin-top: 10px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* 学期对比 */
+.semester-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.semester-item {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.semester-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.semester-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 薄弱环节 */
+.weak-points {
+  margin-bottom: 20px;
+}
+
+.weak-points h2 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.weak-points-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.weak-point-item {
+  padding: 15px;
+  background: #fff7ed;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+}
+
+.weak-point-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.weak-subject {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.weak-score {
+  color: #f59e0b;
+  font-weight: bold;
+}
+
+.weak-point-detail {
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.weak-point-suggestion {
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  color: #333;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* 稳定性分析 */
+.stability-section {
+  margin-bottom: 20px;
+}
+
+.stability-section h2 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.stability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stability-item {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.stability-subject {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.stability-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.stability-level {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+}
+
+.stability-level.excellent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.stability-level.good {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.stability-level.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.stability-level.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+@media (max-width: 1024px) {
+  .overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .charts-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .advanced-analysis h2,
+  .weak-points h2,
+  .stability-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .semester-compare {
+    grid-template-columns: 1fr;
+  }
+  
+  .stability-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filters label,
+  .filters select {
+    width: 100%;
+  }
+  
+  .latest-score {
+    flex-direction: column;
+  }
+  
+  .overall-stats {
+    width: 100%;
+  }
+  
+  .stability-grid {
+    grid-template-columns: 1fr;
+  }
 }

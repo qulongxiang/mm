@@ -1,0 +1,106 @@
+{
+  "student": {
+    "name": "屈晨西",
+    "currentGrade": 4,
+    "educationStages": ["小学"],
+    "startYear": 2022
+  },
+  "scores": [
+    {
+      "id": "20260101",
+      "grade": 4,
+      "examName": "四年级上学期期末考试",
+      "date": "2026-01-15",
+      "subjects": [
+        { "name": "语文", "score": 95, "fullScore": 100 },
+        { "name": "数学", "score": 98, "fullScore": 100 },
+        { "name": "英语", "score": 92, "fullScore": 100 },
+        { "name": "科学", "score": 90, "fullScore": 100 }
+      ]
+    },
+    {
+      "id": "20251115",
+      "grade": 4,
+      "examName": "四年级上学期期中考试",
+      "date": "2025-11-15",
+      "subjects": [
+        { "name": "语文", "score": 92, "fullScore": 100 },
+        { "name": "数学", "score": 95, "fullScore": 100 },
+        { "name": "英语", "score": 88, "fullScore": 100 },
+        { "name": "科学", "score": 85, "fullScore": 100 }
+      ]
+    },
+    {
+      "id": "20250630",
+      "grade": 3,
+      "examName": "三年级下学期期末考试",
+      "date": "2025-06-30",
+      "subjects": [
+        { "name": "语文", "score": 90, "fullScore": 100 },
+        { "name": "数学", "score": 93, "fullScore": 100 },
+        { "name": "英语", "score": 85, "fullScore": 100 },
+        { "name": "科学", "score": 82, "fullScore": 100 }
+      ]
+    },
+    {
+      "id": "20250415",
+      "grade": 3,
+      "examName": "三年级下学期期中考试",
+      "date": "2025-04-15",
+      "subjects": [
+        { "name": "语文", "score": 88, "fullScore": 100 },
+        { "name": "数学", "score": 90, "fullScore": 100 },
+        { "name": "英语", "score": 82, "fullScore": 100 },
+        { "name": "科学", "score": 80, "fullScore": 100 }
+      ]
+    },
+    {
+      "id": "20241230",
+      "grade": 3,
+      "examName": "三年级上学期期末考试",
+      "date": "2024-12-30",
+      "subjects": [
+        { "name": "语文", "score": 85, "fullScore": 100 },
+        { "name": "数学", "score": 88, "fullScore": 100 },
+        { "name": "英语", "score": 80, "fullScore": 100 },
+        { "name": "科学", "score": 78, "fullScore": 100 }
+      ]
+    },
+    {
+      "id": "20241115",
+      "grade": 3,
+      "examName": "三年级上学期期中考试",
+      "date": "2024-11-15",
+      "subjects": [
+        { "name": "语文", "score": 82, "fullScore": 100 },
+        { "name": "数学", "score": 85, "fullScore": 100 },
+        { "name": "英语", "score": 78, "fullScore": 100 },
+        { "name": "科学", "score": 75, "fullScore": 100 }
+      ]
+    },
+    {
+      "id": "20240630",
+      "grade": 2,
+      "examName": "二年级下学期期末考试",
+      "date": "2024-06-30",
+      "subjects": [
+        { "name": "语文", "score": 80, "fullScore": 100 },
+        { "name": "数学", "score": 82, "fullScore": 100 },
+        { "name": "英语", "score": 75, "fullScore": 100 },
+        { "name": "科学", "score": 72, "fullScore": 100 }
+      ]
+    },
+    {
+      "id": "20240415",
+      "grade": 2,
+      "examName": "二年级下学期期中考试",
+      "date": "2024-04-15",
+      "subjects": [
+        { "name": "语文", "score": 78, "fullScore": 100 },
+        { "name": "数学", "score": 80, "fullScore": 100 },
+        { "name": "英语", "score": 72, "fullScore": 100 },
+        { "name": "科学", "score": 70, "fullScore": 100 }
+      ]
+    }
+  ]
+}
