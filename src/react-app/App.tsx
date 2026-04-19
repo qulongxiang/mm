@@ -140,8 +140,7 @@ function App() {
       })
       .then((data: ScoresData) => {
         setData(data);
-        // 只在首次加载时设置默认年级，避免覆盖用户选择
-        setSelectedGrade(prev => prev !== null ? prev : data.student.currentGrade);
+        // 不再默认选中年级，让用户自己选择
         setLoading(false);
       })
       .catch((error) => {
@@ -268,10 +267,20 @@ function App() {
       let strongestSubject = '';
       
       if (subjectAverages.length > 1) {
+        // 多科目情况：计算不同科目的分差
         const averages = subjectAverages.map(s => s.average);
         imbalance = Math.max(...averages) - Math.min(...averages);
         weakestSubject = subjectAverages.reduce((min, curr) => curr.average < min.average ? curr : min).name;
         strongestSubject = subjectAverages.reduce((max, curr) => curr.average > max.average ? curr : max).name;
+      } else if (subjectAverages.length === 1) {
+        // 单科目情况：计算该科目在不同考试中的分差
+        const subjectName = subjectAverages[0].name;
+        const subjectScores = subjectMap.get(subjectName) || [];
+        if (subjectScores.length > 1) {
+          imbalance = Math.max(...subjectScores) - Math.min(...subjectScores);
+          weakestSubject = subjectName;
+          strongestSubject = subjectName;
+        }
       }
       
       const balance = {
@@ -369,13 +378,21 @@ function App() {
 
     // 当数据加载完成后计算分析
     if (data) {
+      // 计算不受筛选影响的分析数据（成绩稳定性）
+      const fullAnalysis = calculateAnalysis(data.scores, null);
+      // 计算受筛选影响的分析数据
       const filteredData = selectedSubject
         ? data.scores.map(exam => ({
             ...exam,
             subjects: exam.subjects.filter(s => s.name === selectedSubject)
           })).filter(exam => exam.subjects.length > 0)
         : data.scores;
-      setAnalysis(calculateAnalysis(filteredData, selectedSubject));
+      const filteredAnalysis = calculateAnalysis(filteredData, selectedSubject);
+      // 合并分析数据，使用不受筛选影响的成绩稳定性
+      setAnalysis({
+        ...filteredAnalysis,
+        stability: fullAnalysis.stability
+      });
     }
   }, [data, selectedSubject]);
 
@@ -780,23 +797,7 @@ function App() {
     improvementRate: overallTrend ? overallTrend.value : 0
   };
 
-  // 计算各科统计数据
-  const subjectStatistics = subjects.map(subject => {
-    const scores = filteredScores.flatMap(exam => {
-      const sub = exam.subjects.find(s => s.name === subject);
-      return sub ? [sub.score] : [];
-    });
-    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    const max = scores.length > 0 ? Math.max(...scores) : 0;
-    const min = scores.length > 0 ? Math.min(...scores) : 0;
-    return {
-      name: subject,
-      average: Math.round(avg * 10) / 10,
-      highest: max,
-      lowest: min,
-      count: scores.length
-    };
-  });
+
 
   // 计算年级统计数据
   const gradeStatistics = grades.map(grade => {
@@ -824,15 +825,18 @@ function App() {
         <div className="card">
           <h3>🏆 最新成绩概览</h3>
           {latestExam && (
-            <div className="latest-score">
-              <div className="exam-info">
-                <h4>{latestExam.examName}</h4>
-                <p>考试日期: {latestExam.date}</p>
+            <div className="latest-score-detail">
+              <div className="exam-header">
+                <div className="exam-badge">{latestExam.examType === 'midterm' ? '期中考试' : '期末考试'}</div>
+                <div className="exam-info">
+                  <h4>{latestExam.examName}</h4>
+                  <p>考试日期: {latestExam.date}</p>
+                </div>
               </div>
               <div className="overall-stats">
-                <div className="stat">
+                <div className="stat main-stat">
                   <span className="stat-label">总分</span>
-                  <span className="stat-value highlight">{latestExam.subjects.reduce((sum, s) => sum + s.score, 0)}/{latestExam.subjects.reduce((sum, s) => sum + s.fullScore, 0)}</span>
+                  <span className="stat-value highlight large">{latestExam.subjects.reduce((sum, s) => sum + s.score, 0)}/{latestExam.subjects.reduce((sum, s) => sum + s.fullScore, 0)}</span>
                 </div>
                 <div className="stat">
                   <span className="stat-label">平均分</span>
@@ -847,25 +851,151 @@ function App() {
                   </div>
                 )}
               </div>
+              <div className="subjects-detail">
+                <h4>📚 各科成绩</h4>
+                <div className="subject-grid">
+                  {latestExam.subjects.map((sub) => {
+                    const percentage = (sub.score / sub.fullScore) * 100;
+                    const grade = percentage >= 90 ? 'excellent' : percentage >= 80 ? 'good' : percentage >= 60 ? 'pass' : 'fail';
+                    return (
+                      <div key={sub.name} className={`subject-item ${grade}`}>
+                        <span className="subject-name">{sub.name}</span>
+                        <span className="subject-score">{sub.score}/{sub.fullScore}</span>
+                        <span className={`subject-badge ${grade}`}>
+                          {percentage >= 90 ? '优秀' : percentage >= 80 ? '良好' : percentage >= 60 ? '及格' : '待提高'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {previousExam && (
+                <div className="improvement-tip">
+                  {overallTrend && overallTrend.type === 'up' ? '🎉 继续保持，成绩在稳步提升！' : 
+                   overallTrend && overallTrend.type === 'down' ? '💪 不要气馁，分析错题，继续努力！' : 
+                   '👍 成绩稳定，再接再厉！'}
+                </div>
+              )}
+              
+              {/* 各科成绩趋势 */}
+              <div className="subject-trends-section">
+                <h4>📈 各科成绩趋势</h4>
+                <div className="subject-trends">
+                  {subjectTrends.map((trend) => (
+                    <div key={trend.name} className="subject-trend-item">
+                      <span className="subject-name">{trend.name}</span>
+                      <div className="score-info">
+                        <span className="latest-score">{trend.latestScore}</span>
+                        <span className={`trend-indicator ${trend.type === 'up' ? 'positive' : trend.type === 'down' ? 'negative' : ''}`}>
+                          {trend.type === 'up' ? '↑' : trend.type === 'down' ? '↓' : '→'} {Math.abs(trend.diff)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
+      </section>
 
+      {/* 年级对比（不受筛选影响） */}
+      <section className="statistics">
         <div className="card">
-          <h3>📈 各科成绩趋势</h3>
-          <div className="subject-trends">
-            {subjectTrends.map((trend) => (
-              <div key={trend.name} className="subject-trend-item">
-                <span className="subject-name">{trend.name}</span>
-                <div className="score-info">
-                  <span className="latest-score">{trend.latestScore}</span>
-                  <span className={`trend-indicator ${trend.type === 'up' ? 'positive' : trend.type === 'down' ? 'negative' : ''}`}>
-                    {trend.type === 'up' ? '↑' : trend.type === 'down' ? '↓' : '→'} {Math.abs(trend.diff)}
-                  </span>
+          <h3>📈 年级对比</h3>
+          <div className="grade-stats">
+            {gradeStatistics.map((stat) => (
+              <div key={stat.grade} className="grade-stat-item">
+                <span className="grade-name">{stat.grade}年级</span>
+                <div className="grade-stats-details">
+                  <span>平均分: {stat.average}</span>
+                  <span>考试次数: {stat.count}</span>
                 </div>
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 成绩稳定性（不受筛选影响） */}
+      {analysis && Object.keys(analysis.stability).length > 0 && (
+        <section className="stability-section">
+          <h2>📊 成绩稳定性</h2>
+          <div className="card">
+            <div className="stability-grid">
+              {Object.entries(analysis.stability).map(([subject, stability]) => (
+                <div key={subject} className="stability-item">
+                  <span className="stability-subject">{subject}</span>
+                  <div className="stability-details">
+                    <span>波动: {stability.stdDev}分</span>
+                    <span className={`stability-level ${
+                      stability.level === '非常稳定' ? 'excellent' :
+                      stability.level === '较稳定' ? 'good' :
+                      stability.level === '一般' ? 'warning' : 'danger'
+                    }`}>
+                      {stability.level}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 各科统计（不受筛选影响） */}
+      <section className="statistics">
+        <div className="card">
+          <h3>📚 各科统计</h3>
+          <div className="subject-stats">
+            {subjects.map(subject => {
+              const scores = data.scores.flatMap(exam => {
+                const sub = exam.subjects.find(s => s.name === subject);
+                return sub ? [sub.score] : [];
+              });
+              const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+              const max = scores.length > 0 ? Math.max(...scores) : 0;
+              const min = scores.length > 0 ? Math.min(...scores) : 0;
+              return (
+                <div key={subject} className="subject-stat-item">
+                  <span className="subject-name">{subject}</span>
+                  <div className="subject-stats-details">
+                    <span>平均: {Math.round(avg * 10) / 10}</span>
+                    <span>最高: {max}</span>
+                    <span>最低: {min}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ECharts 图表 */}
+      <section className="charts-section">
+        <div className="card">
+          <h3>📊 学期成绩走势</h3>
+          <div ref={semesterChartRef} className="chart-container"></div>
+        </div>
+
+        <div className="card">
+          <h3>📚 各科成绩对比</h3>
+          <div ref={subjectChartRef} className="chart-container"></div>
+        </div>
+
+        <div className="card">
+          <h3>📅 年度同比分析</h3>
+          <div ref={yearlyChartRef} className="chart-container"></div>
+        </div>
+
+        <div className="card">
+          <h3>🎯 学科能力雷达图</h3>
+          <div ref={radarChartRef} className="chart-container"></div>
+        </div>
+
+        <div className="card">
+          <h3>📉 成绩稳定性分析</h3>
+          <div ref={stabilityChartRef} className="chart-container"></div>
         </div>
       </section>
 
@@ -885,6 +1015,50 @@ function App() {
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
+      </section>
+
+      {/* 成绩明细表 */}
+      <section className="score-table-section">
+        <h2>📋 成绩明细</h2>
+        <div className="table-wrapper">
+          <table className="score-table">
+            <thead>
+              <tr>
+                <th>考试名称</th>
+                <th>日期</th>
+                {subjects.filter(s => !selectedSubject || s === selectedSubject).map((s) => (
+                  <th key={s}>{s}</th>
+                ))}
+                <th>平均分</th>
+                <th>环比</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredScores.map((exam, idx) => {
+                const prev = idx < filteredScores.length - 1 ? filteredScores[idx + 1] : null;
+                const comp = getComparison(exam, prev);
+                return (
+                  <tr key={exam.id}>
+                    <td className="exam-name">{exam.examName}</td>
+                    <td>{exam.date}</td>
+                    {subjects.filter(s => !selectedSubject || s === selectedSubject).map((s) => (
+                      <td key={s}>{getSubjectScore(exam, s)}</td>
+                    ))}
+                    <td className="avg">{getExamAverage(exam)}</td>
+                    <td className={`compare ${comp?.type || ''}`}>
+                      {comp ? (
+                        <>
+                          {comp.value >= 0 ? '+' : ''}{comp.value}
+                          {comp.type === 'up' ? ' ↑' : comp.type === 'down' ? ' ↓' : ''}
+                        </>
+                      ) : '-'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {/* 新增：深度分析维度 */}
@@ -925,12 +1099,12 @@ function App() {
             <h3>⚖️ 学科均衡度</h3>
             <div className="balance-info">
               <div className="balance-stat">
-                <span className="stat-label">最大分差</span>
-                <span className={`stat-value ${analysis.balance.imbalance > 15 ? 'warning' : 'good'}`}>
+                <span className="stat-label">{selectedSubject ? '分数波动' : '最大分差'}</span>
+                <span className={`stat-value ${analysis.balance.imbalance > 15 ? 'warning' : analysis.balance.imbalance > 10 ? 'info' : 'good'}`}>
                   {analysis.balance.imbalance}分
                 </span>
               </div>
-              {analysis.balance.weakestSubject && (
+              {!selectedSubject && analysis.balance.weakestSubject && analysis.balance.strongestSubject && (
                 <>
                   <div className="balance-stat">
                     <span className="stat-label">优势科目</span>
@@ -943,12 +1117,48 @@ function App() {
                 </>
               )}
               <p className="balance-comment">
-                {analysis.balance.imbalance > 15 
+                {selectedSubject 
+                  ? analysis.balance.imbalance > 15 
+                    ? '⚠️ 该科目成绩波动较大，建议稳定发挥' 
+                    : analysis.balance.imbalance > 10 
+                    ? '💡 该科目成绩有一定波动，可进一步稳定' 
+                    : '✅ 该科目成绩较为稳定'
+                  : analysis.balance.imbalance > 15 
                   ? '⚠️ 存在偏科现象，建议均衡发展' 
                   : analysis.balance.imbalance > 10 
                   ? '💡 各科差距适中，可进一步优化' 
-                  : '✅ 学科发展较为均衡'}
+                  : analysis.balance.weakestSubject 
+                  ? '✅ 学科发展较为均衡' 
+                  : 'ℹ️ 请选择科目进行均衡度分析'}
               </p>
+              <div className="balance-description">
+                <h4>📝 计算方法</h4>
+                {selectedSubject ? (
+                  <>
+                    <p>1. 收集该科目在所有考试中的分数</p>
+                    <p>2. 找出该科目在所有考试中的最高分和最低分</p>
+                    <p>3. 计算最高分与最低分的差值，即分数波动</p>
+                    <p>4. 根据分数波动评估稳定性：</p>
+                    <ul>
+                      <li>≤10分：成绩较为稳定</li>
+                      <li>11-15分：成绩有一定波动</li>
+                      <li>＞15分：成绩波动较大</li>
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <p>1. 计算每个科目的平均分数</p>
+                    <p>2. 找出所有科目中的最高分和最低分</p>
+                    <p>3. 计算最高分与最低分的差值，即最大分差</p>
+                    <p>4. 根据最大分差评估均衡度：</p>
+                    <ul>
+                      <li>≤10分：学科发展较为均衡</li>
+                      <li>11-15分：各科差距适中，可进一步优化</li>
+                      <li>＞15分：存在偏科现象，建议均衡发展</li>
+                    </ul>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1037,31 +1247,7 @@ function App() {
         </section>
       )}
 
-      {/* 稳定性分析 */}
-      {analysis && Object.keys(analysis.stability).length > 0 && (
-        <section className="stability-section">
-          <h2>📊 成绩稳定性</h2>
-          <div className="card">
-            <div className="stability-grid">
-              {Object.entries(analysis.stability).map(([subject, stability]) => (
-                <div key={subject} className="stability-item">
-                  <span className="stability-subject">{subject}</span>
-                  <div className="stability-details">
-                    <span>波动: {stability.stdDev}分</span>
-                    <span className={`stability-level ${
-                      stability.level === '非常稳定' ? 'excellent' :
-                      stability.level === '较稳定' ? 'good' :
-                      stability.level === '一般' ? 'warning' : 'danger'
-                    }`}>
-                      {stability.level}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+
 
       {/* 统计维度 */}
       <section className="statistics">
@@ -1093,110 +1279,7 @@ function App() {
           </div>
         </div>
 
-        {/* 各科统计 */}
-        <div className="card">
-          <h3>📚 各科统计</h3>
-          <div className="subject-stats">
-            {subjectStatistics.map((stat) => (
-              <div key={stat.name} className="subject-stat-item">
-                <span className="subject-name">{stat.name}</span>
-                <div className="subject-stats-details">
-                  <span>平均: {stat.average}</span>
-                  <span>最高: {stat.highest}</span>
-                  <span>最低: {stat.lowest}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* 年级对比 */}
-        <div className="card">
-          <h3>📈 年级对比</h3>
-          <div className="grade-stats">
-            {gradeStatistics.map((stat) => (
-              <div key={stat.grade} className="grade-stat-item">
-                <span className="grade-name">{stat.grade}年级</span>
-                <div className="grade-stats-details">
-                  <span>平均分: {stat.average}</span>
-                  <span>考试次数: {stat.count}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 成绩明细表 */}
-      <section className="score-table-section">
-        <h2>📋 成绩明细</h2>
-        <div className="table-wrapper">
-          <table className="score-table">
-            <thead>
-              <tr>
-                <th>考试名称</th>
-                <th>日期</th>
-                {subjects.filter(s => !selectedSubject || s === selectedSubject).map((s) => (
-                  <th key={s}>{s}</th>
-                ))}
-                <th>平均分</th>
-                <th>环比</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredScores.map((exam, idx) => {
-                const prev = idx < filteredScores.length - 1 ? filteredScores[idx + 1] : null;
-                const comp = getComparison(exam, prev);
-                return (
-                  <tr key={exam.id}>
-                    <td className="exam-name">{exam.examName}</td>
-                    <td>{exam.date}</td>
-                    {subjects.filter(s => !selectedSubject || s === selectedSubject).map((s) => (
-                      <td key={s}>{getSubjectScore(exam, s)}</td>
-                    ))}
-                    <td className="avg">{getExamAverage(exam)}</td>
-                    <td className={`compare ${comp?.type || ''}`}>
-                      {comp ? (
-                        <>
-                          {comp.value >= 0 ? '+' : ''}{comp.value}
-                          {comp.type === 'up' ? ' ↑' : comp.type === 'down' ? ' ↓' : ''}
-                        </>
-                      ) : '-'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* ECharts 图表 */}
-      <section className="charts-section">
-        <div className="card">
-          <h3>📊 学期成绩走势</h3>
-          <div ref={semesterChartRef} className="chart-container"></div>
-        </div>
-
-        <div className="card">
-          <h3>📚 各科成绩对比</h3>
-          <div ref={subjectChartRef} className="chart-container"></div>
-        </div>
-
-        <div className="card">
-          <h3>📅 年度同比分析</h3>
-          <div ref={yearlyChartRef} className="chart-container"></div>
-        </div>
-
-        <div className="card">
-          <h3>🎯 学科能力雷达图</h3>
-          <div ref={radarChartRef} className="chart-container"></div>
-        </div>
-
-        <div className="card">
-          <h3>📉 成绩稳定性分析</h3>
-          <div ref={stabilityChartRef} className="chart-container"></div>
-        </div>
       </section>
 
       <footer className="footer">

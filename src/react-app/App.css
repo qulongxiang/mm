@@ -39,9 +39,7 @@ body {
 }
 
 .overview {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  display: block;
   margin-bottom: 20px;
 }
 
@@ -49,7 +47,8 @@ body {
   background: white;
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
 }
 
 .card h3 {
@@ -194,50 +193,220 @@ body {
   display: inline;
 }
 
-/* 各科成绩趋势 */
-.subject-trends {
+/* 最新成绩概览详情 */
+.latest-score-detail {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
+}
+
+.exam-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.exam-badge {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.exam-info h4 {
+  margin: 0 0 5px 0;
+  color: #667eea;
+  font-size: 1.3rem;
+}
+
+.exam-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.overall-stats {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 15px;
+}
+
+.overall-stats .main-stat {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.overall-stats .main-stat .stat-label {
+  color: rgba(255,255,255,0.8);
+}
+
+.overall-stats .stat-value.large {
+  font-size: 1.8rem;
+}
+
+.subjects-detail {
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.subjects-detail h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.subject-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px 10px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.subject-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.subject-item .subject-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.subject-item .subject-score {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
+.subject-item .subject-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.subject-item.excellent {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+}
+
+.subject-item.excellent .subject-badge {
+  background: #10b981;
+  color: white;
+}
+
+.subject-item.good {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.subject-item.good .subject-badge {
+  background: #3b82f6;
+  color: white;
+}
+
+.subject-item.pass {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.subject-item.pass .subject-badge {
+  background: #f59e0b;
+  color: white;
+}
+
+.subject-item.fail {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+}
+
+.subject-item.fail .subject-badge {
+  background: #ef4444;
+  color: white;
+}
+
+.improvement-tip {
+  padding: 12px 16px;
+  background: #f0f9ff;
+  border-radius: 10px;
+  color: #333;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.subject-trends-section {
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.subject-trends-section h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.subject-trends {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
 }
 
 .subject-trend-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
+  padding: 12px 16px;
   background: #f8f9fa;
-  border-radius: 8px;
-  transition: background 0.3s ease;
+  border-radius: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .subject-trend-item:hover {
-  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.score-info {
+.subject-trend-item .subject-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.subject-trend-item .score-info {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
 }
 
-.latest-score {
+.subject-trend-item .latest-score {
   font-weight: bold;
-  color: #666;
+  color: #667eea;
 }
 
-.trend-indicator {
-  font-weight: bold;
-  font-size: 1.1rem;
+.subject-trend-item .trend-indicator {
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.trend-indicator.positive {
+.subject-trend-item .trend-indicator.positive {
   color: #10b981;
 }
 
-.trend-indicator.negative {
+.subject-trend-item .trend-indicator.negative {
   color: #ef4444;
 }
+
+
 
 /* 统计分析 */
 .statistics {
@@ -575,6 +744,10 @@ body {
   color: #10b981;
 }
 
+.stat-value.info {
+  color: #3b82f6;
+}
+
 .balance-comment {
   margin-top: 10px;
   padding: 12px;
@@ -583,6 +756,37 @@ body {
   color: #333;
   font-size: 0.95rem;
   line-height: 1.6;
+}
+
+.balance-description {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.balance-description h4 {
+  margin: 0 0 10px 0;
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.balance-description p {
+  margin: 8px 0;
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+.balance-description ul {
+  margin: 10px 0 0 20px;
+  padding: 0;
+}
+
+.balance-description li {
+  margin: 5px 0;
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.4;
 }
 
 /* 学习曲线 */
