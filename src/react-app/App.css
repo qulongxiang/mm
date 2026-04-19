@@ -789,6 +789,89 @@ body {
   line-height: 1.4;
 }
 
+.balance-subjects {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.balance-subjects h4 {
+  margin: 0 0 15px 0;
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.subject-rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subject-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.subject-rank-item:hover {
+  background: #e9ecef;
+  transform: translateX(5px);
+}
+
+.subject-rank-item.top {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-left: 4px solid #10b981;
+}
+
+.subject-rank-item.top .rank-number {
+  background: #10b981;
+  color: white;
+}
+
+.subject-rank-item.bottom {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-left: 4px solid #f59e0b;
+}
+
+.subject-rank-item.bottom .rank-number {
+  background: #f59e0b;
+  color: white;
+}
+
+.rank-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.subject-rank-item .subject-name {
+  flex: 1;
+  font-weight: 600;
+  color: #333;
+}
+
+.subject-rank-item .subject-avg {
+  font-weight: bold;
+  color: #667eea;
+  font-size: 1.1rem;
+}
+
+.subject-rank-item .subject-range {
+  font-size: 0.85rem;
+  color: #888;
+}
+
 /* 学习曲线 */
 .learning-curve {
   display: flex;

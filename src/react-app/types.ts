@@ -48,6 +48,13 @@ export interface BalanceData {
   imbalance: number;
   weakestSubject: string;
   strongestSubject: string;
+  subjectDetails: Array<{
+    name: string;
+    average: number;
+    highest: number;
+    lowest: number;
+    examCount: number;
+  }>;
 }
 
 export interface AchievementRates {

@@ -160,7 +160,7 @@ function App() {
           yearOverYearComparison: {},
           historicalAverage: 0,
           stability: {},
-          balance: { imbalance: 0, weakestSubject: '', strongestSubject: '' },
+          balance: { imbalance: 0, weakestSubject: '', strongestSubject: '', subjectDetails: [] },
           achievementRates: { excellent: 0, good: 0, pass: 0 },
           weakPoints: [],
           learningCurve: { acceleration: 0, trend: '稳定' },
@@ -259,34 +259,43 @@ function App() {
       // 新增：学科均衡度分析
       const subjectAverages = Array.from(subjectMap.entries()).map(([name, scores]) => ({
         name,
-        average: scores.reduce((a, b) => a + b, 0) / scores.length
+        average: Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100,
+        highest: Math.round(Math.max(...scores) * 100) / 100,
+        lowest: Math.round(Math.min(...scores) * 100) / 100,
+        examCount: scores.length
       }));
-      
+
       let imbalance = 0;
       let weakestSubject = '';
       let strongestSubject = '';
-      
-      if (subjectAverages.length > 1) {
-        // 多科目情况：计算不同科目的分差
-        const averages = subjectAverages.map(s => s.average);
-        imbalance = Math.max(...averages) - Math.min(...averages);
-        weakestSubject = subjectAverages.reduce((min, curr) => curr.average < min.average ? curr : min).name;
-        strongestSubject = subjectAverages.reduce((max, curr) => curr.average > max.average ? curr : max).name;
-      } else if (subjectAverages.length === 1) {
+      let subjectDetails: Array<{name: string; average: number; highest: number; lowest: number; examCount: number}> = [];
+
+      if (selectedSubject) {
         // 单科目情况：计算该科目在不同考试中的分差
-        const subjectName = subjectAverages[0].name;
-        const subjectScores = subjectMap.get(subjectName) || [];
-        if (subjectScores.length > 1) {
-          imbalance = Math.max(...subjectScores) - Math.min(...subjectScores);
-          weakestSubject = subjectName;
-          strongestSubject = subjectName;
+        const subjectData = subjectAverages.find(s => s.name === selectedSubject);
+        if (subjectData) {
+          imbalance = Math.round((subjectData.highest - subjectData.lowest) * 100) / 100;
+          weakestSubject = subjectData.name;
+          strongestSubject = subjectData.name;
+          subjectDetails = [subjectData];
+        }
+      } else {
+        // 多科目情况：计算各科目的分差
+        if (subjectAverages.length > 1) {
+          imbalance = Math.round((Math.max(...subjectAverages.map(s => s.average)) - Math.min(...subjectAverages.map(s => s.average))) * 100) / 100;
+          const bestSubject = subjectAverages.reduce((max, curr) => curr.average > max.average ? curr : max);
+          const worstSubject = subjectAverages.reduce((min, curr) => curr.average < min.average ? curr : min);
+          strongestSubject = bestSubject.name;
+          weakestSubject = worstSubject.name;
+          subjectDetails = subjectAverages.sort((a, b) => b.average - a.average);
         }
       }
-      
+
       const balance = {
-        imbalance: Math.round(imbalance * 100) / 100,
+        imbalance,
         weakestSubject,
-        strongestSubject
+        strongestSubject,
+        subjectDetails
       };
 
       // 新增：达标率统计
@@ -388,10 +397,14 @@ function App() {
           })).filter(exam => exam.subjects.length > 0)
         : data.scores;
       const filteredAnalysis = calculateAnalysis(filteredData, selectedSubject);
-      // 合并分析数据，使用不受筛选影响的成绩稳定性
+      // 合并分析数据，使用不受筛选影响的成绩稳定性，但保留subjectDetails
       setAnalysis({
         ...filteredAnalysis,
-        stability: fullAnalysis.stability
+        stability: fullAnalysis.stability,
+        balance: {
+          ...filteredAnalysis.balance,
+          subjectDetails: fullAnalysis.balance.subjectDetails
+        }
       });
     }
   }, [data, selectedSubject]);
@@ -1131,6 +1144,21 @@ function App() {
                   ? '✅ 学科发展较为均衡' 
                   : 'ℹ️ 请选择科目进行均衡度分析'}
               </p>
+              {!selectedSubject && analysis.balance.subjectDetails && analysis.balance.subjectDetails.length > 0 && (
+                <div className="balance-subjects">
+                  <h4>📊 各科平均分排名</h4>
+                  <div className="subject-rank-list">
+                    {analysis.balance.subjectDetails.map((subject, index) => (
+                      <div key={subject.name} className={`subject-rank-item ${index === 0 ? 'top' : index === analysis.balance.subjectDetails.length - 1 ? 'bottom' : ''}`}>
+                        <span className="rank-number">{index + 1}</span>
+                        <span className="subject-name">{subject.name}</span>
+                        <span className="subject-avg">{subject.average}分</span>
+                        <span className="subject-range">最高{subject.highest} / 最低{subject.lowest}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="balance-description">
                 <h4>📝 计算方法</h4>
                 {selectedSubject ? (
@@ -1147,9 +1175,9 @@ function App() {
                   </>
                 ) : (
                   <>
-                    <p>1. 计算每个科目的平均分数</p>
-                    <p>2. 找出所有科目中的最高分和最低分</p>
-                    <p>3. 计算最高分与最低分的差值，即最大分差</p>
+                    <p>1. 计算每个科目的平均分数（基于所有考试）</p>
+                    <p>2. 找出所有科目中的最高平均分和最低平均分</p>
+                    <p>3. 计算两者之间的差值，即最大分差</p>
                     <p>4. 根据最大分差评估均衡度：</p>
                     <ul>
                       <li>≤10分：学科发展较为均衡</li>
