@@ -733,9 +733,8 @@ function App() {
     }
   }, [data, analysis, selectedGrade, selectedSubject]);
 
-  if (loading) return <div className="loading">加载中...</div>;
   if (!token) return <Login onLogin={handleLogin} />;
-  if (!data) return <div className="error">数据加载失败</div>;
+  if (loading || !data) return <div className="loading">加载中...</div>;
 
   const grades = [...new Set(data.scores.map((s) => s.grade))].sort((a, b) => b - a);
   const subjects = [...new Set(data.scores.flatMap((s) => s.subjects.map((sub) => sub.name)))];
