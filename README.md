@@ -4,6 +4,10 @@
 npm config set registry https://registry.npmmirror.com/
 npm install
 npm run preview
+
+# 本地运行环境更接近
+lsof -ti:8787 | xargs kill -9
+node dev.cjs
 ```
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/vite-react-template)

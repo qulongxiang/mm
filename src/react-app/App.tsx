@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./App.css";
 import type { ScoresData, AnalysisData, ExamScore } from "./types";
 import * as echarts from "echarts";
+import Login from "./Login";
 
 // 工具函数
 const getExamAverage = (exam: ExamScore, subjectFilter?: string | null) => {
@@ -102,15 +103,37 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const semesterChartRef = useRef<HTMLDivElement>(null);
   const subjectChartRef = useRef<HTMLDivElement>(null);
   const yearlyChartRef = useRef<HTMLDivElement>(null);
   const radarChartRef = useRef<HTMLDivElement>(null);
   const stabilityChartRef = useRef<HTMLDivElement>(null);
 
+  const handleLogin = (token: string) => {
+    setToken(token);
+    localStorage.setItem('token', token);
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setData(null);
+    setAnalysis(null);
+    localStorage.removeItem('token');
+  };
+
   useEffect(() => {
-    // 直接从本地 JSON 文件加载数据，避免 API 调用失败
-    fetch("/data/scores.json")
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    // 从 Worker API 获取数据
+    fetch("/api/scores", {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
         return res.json();
@@ -123,21 +146,10 @@ function App() {
       })
       .catch((error) => {
         console.error('Error loading scores data:', error);
-        // 使用默认数据
-        const defaultData: ScoresData = {
-          student: {
-            name: "屈晨西",
-            currentGrade: 4,
-            educationStages: ["小学"],
-            startYear: 2022
-          },
-          scores: []
-        };
-        setData(defaultData);
-        setSelectedGrade(prev => prev !== null ? prev : 4);
-        setLoading(false);
+        // 清除 token 并显示登录页面
+        handleLogout();
       });
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     // 本地计算分析数据
@@ -722,6 +734,7 @@ function App() {
   }, [data, analysis, selectedGrade, selectedSubject]);
 
   if (loading) return <div className="loading">加载中...</div>;
+  if (!token) return <Login onLogin={handleLogin} />;
   if (!data) return <div className="error">数据加载失败</div>;
 
   const grades = [...new Set(data.scores.map((s) => s.grade))].sort((a, b) => b - a);
@@ -800,8 +813,11 @@ function App() {
   return (
     <div className="container">
       <header className="header">
-        <h1>📊 {data.student.name} 成绩追踪</h1>
-        <p className="subtitle">当前年级: {data.student.currentGrade}年级 | 教育阶段: {data.student.educationStages.join(", ")}</p>
+        <div className="header-top">
+          <h1>📊 {data.student.name} 成绩追踪</h1>
+          <button className="logout-button" onClick={handleLogout}>退出登录</button>
+        </div>
+        <p className="subtitle">当前年级: {data.student.currentGrade}年级 | 教育阶段: {data.student.educationStages}</p>
       </header>
 
       {/* 最新成绩概览 */}
