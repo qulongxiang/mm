@@ -104,6 +104,18 @@ function App() {
   const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [showDataManager, setShowDataManager] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [currentExam, setCurrentExam] = useState<any>(null);
+  const [newExam, setNewExam] = useState({
+    grade: 1,
+    semester: 1,
+    examType: 'midterm',
+    examName: '1年级上学期期中考试',
+    date: '',
+    subjects: [{ name: '语文', score: 0, fullScore: 100 }, { name: '数学', score: 0, fullScore: 100 }, { name: '英语', score: 0, fullScore: 100 }]
+  });
   const semesterChartRef = useRef<HTMLDivElement>(null);
   const subjectChartRef = useRef<HTMLDivElement>(null);
   const yearlyChartRef = useRef<HTMLDivElement>(null);
@@ -120,6 +132,206 @@ function App() {
     setData(null);
     setAnalysis(null);
     localStorage.removeItem('token');
+  };
+
+  // 处理编辑按钮点击事件
+  const handleEdit = (exam: any) => {
+    setCurrentExam(exam);
+    setShowEditForm(true);
+  };
+
+  // 处理删除按钮点击事件
+  const handleDelete = async (examId: string) => {
+    if (window.confirm('确定要删除这条成绩记录吗？')) {
+      try {
+        const response = await fetch(`/api/scores/${examId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          // 重新获取成绩数据
+          const scoresResponse = await fetch("/api/scores", {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const scoresData = await scoresResponse.json();
+          setData(scoresData);
+        } else {
+          console.error('删除失败');
+        }
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
+    }
+  };
+
+  // 处理添加按钮点击事件
+  const handleAdd = () => {
+    setShowAddForm(true);
+  };
+
+  // 处理添加表单提交
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // 检查考试名称是否已存在
+    if (data) {
+      const existingExam = data.scores.find((exam: any) => exam.examName === newExam.examName);
+      if (existingExam) {
+        alert('该考试名称已存在，请修改年级、学期或考试类型');
+        return;
+      }
+    }
+    
+    try {
+      const response = await fetch('/api/scores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newExam)
+      });
+
+      if (response.ok) {
+        // 重新获取成绩数据
+        const scoresResponse = await fetch("/api/scores", {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const scoresData = await scoresResponse.json();
+        setData(scoresData);
+        setShowAddForm(false);
+        // 重置表单
+        setNewExam({
+          grade: 1,
+          semester: 1,
+          examType: 'midterm',
+          examName: '1年级上学期期中考试',
+          date: '',
+          subjects: [{ name: '语文', score: 0, fullScore: 100 }, { name: '数学', score: 0, fullScore: 100 }, { name: '英语', score: 0, fullScore: 100 }]
+        });
+      } else {
+        console.error('添加失败');
+      }
+    } catch (error) {
+      console.error('添加失败:', error);
+    }
+  };
+
+  // 处理编辑表单提交
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // 检查考试名称是否已存在（排除当前编辑的考试）
+    if (data && currentExam) {
+      const existingExam = data.scores.find((exam: any) => 
+        exam.examName === currentExam.examName && exam.id !== currentExam.id
+      );
+      if (existingExam) {
+        alert('该考试名称已存在，请修改年级、学期或考试类型');
+        return;
+      }
+    }
+    
+    try {
+      const response = await fetch(`/api/scores/${currentExam.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(currentExam)
+      });
+
+      if (response.ok) {
+        // 重新获取成绩数据
+        const scoresResponse = await fetch("/api/scores", {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const scoresData = await scoresResponse.json();
+        setData(scoresData);
+        setShowEditForm(false);
+        setCurrentExam(null);
+      } else {
+        console.error('编辑失败');
+      }
+    } catch (error) {
+      console.error('编辑失败:', error);
+    }
+  };
+
+  // 处理表单输入变化
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, index?: number) => {
+    const { name, value } = e.target;
+    if (index !== undefined) {
+      // 处理科目输入变化
+      setNewExam(prev => {
+        const newSubjects = [...prev.subjects];
+        newSubjects[index] = {
+          ...newSubjects[index],
+          [name]: parseFloat(value) || 0
+        };
+        return {
+          ...prev,
+          subjects: newSubjects
+        };
+      });
+    } else {
+      // 处理普通输入变化
+      setNewExam(prev => {
+        const updatedExam = {
+          ...prev,
+          [name]: name === 'grade' || name === 'semester' ? parseInt(value) || 0 : value
+        };
+        
+        // 自动生成考试名称
+        if (name === 'grade' || name === 'semester' || name === 'examType') {
+          const semesterText = updatedExam.semester === 1 ? '上学期' : '下学期';
+          const examTypeText = updatedExam.examType === 'midterm' ? '期中考试' : '期末考试';
+          updatedExam.examName = `${updatedExam.grade}年级${semesterText}${examTypeText}`;
+        }
+        
+        return updatedExam;
+      });
+    }
+  };
+
+  // 处理编辑表单输入变化
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, index?: number) => {
+    const { name, value } = e.target;
+    if (index !== undefined) {
+      // 处理科目输入变化
+      setCurrentExam((prev: any) => {
+        const newSubjects = [...prev.subjects];
+        newSubjects[index] = {
+          ...newSubjects[index],
+          [name]: parseFloat(value) || 0
+        };
+        return {
+          ...prev,
+          subjects: newSubjects
+        };
+      });
+    } else {
+      // 处理普通输入变化
+      setCurrentExam((prev: any) => {
+        const updatedExam = {
+          ...prev,
+          [name]: name === 'grade' || name === 'semester' ? parseInt(value) || 0 : value
+        };
+        
+        // 自动生成考试名称
+        if (name === 'grade' || name === 'semester' || name === 'examType') {
+          const semesterText = updatedExam.semester === 1 ? '上学期' : '下学期';
+          const examTypeText = updatedExam.examType === 'midterm' ? '期中考试' : '期末考试';
+          updatedExam.examName = `${updatedExam.grade}年级${semesterText}${examTypeText}`;
+        }
+        
+        return updatedExam;
+      });
+    }
   };
 
   useEffect(() => {
@@ -449,7 +661,7 @@ function App() {
         },
         yAxis: {
           type: 'value',
-          min: 80,
+          min: 0,
           max: 100
         },
         series: [{
@@ -531,7 +743,7 @@ function App() {
         },
         yAxis: {
           type: 'value',
-          min: 80,
+          min: 0,
           max: 100
         },
         series: [
@@ -583,7 +795,7 @@ function App() {
         },
         yAxis: {
           type: 'value',
-          min: 80,
+          min: 0,
           max: 100
         },
         series: [{
@@ -771,6 +983,264 @@ function App() {
   if (!token) return <Login onLogin={handleLogin} />;
   if (loading || !data) return <div className="loading">加载中...</div>;
 
+  // 数据维护界面
+  if (showDataManager) {
+    return (
+      <div className="container">
+        <header className="header">
+          <div className="header-top">
+            <h1>📊 数据维护</h1>
+            <div className="header-buttons">
+              {showAddForm || showEditForm ? (
+                <button className="manage-button" onClick={() => {
+                  setShowAddForm(false);
+                  setShowEditForm(false);
+                  setCurrentExam(null);
+                }}>取消</button>
+              ) : (
+                <button className="manage-button" onClick={() => {
+                  setShowDataManager(false);
+                }}>返回</button>
+              )}
+              <button className="logout-button" onClick={handleLogout}>退出登录</button>
+            </div>
+          </div>
+          <p className="subtitle">管理 {data.student.name} 的成绩数据</p>
+        </header>
+
+        {/* 添加成绩表单 */}
+        {showAddForm && (
+          <section className="data-manager">
+            <div className="card">
+              <h3>➕ 添加成绩</h3>
+              <form onSubmit={handleAddSubmit}>
+                <div className="form-group">
+                  <label>年级</label>
+                  <select
+                    name="grade"
+                    value={newExam.grade}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(grade => (
+                      <option key={grade} value={grade}>{grade}年级</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>学期</label>
+                  <select
+                    name="semester"
+                    value={newExam.semester}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value={1}>上学期</option>
+                    <option value={2}>下学期</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>考试类型</label>
+                  <select
+                    name="examType"
+                    value={newExam.examType}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="midterm">期中考试</option>
+                    <option value="final">期末考试</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>考试名称</label>
+                  <input
+                    type="text"
+                    name="examName"
+                    value={newExam.examName}
+                    readOnly
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>考试日期</label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={newExam.date}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>科目成绩</label>
+                  {newExam.subjects.map((subject, index) => (
+                    <div key={subject.name} className="subject-form">
+                      <div className="subject-form-row">
+                        <input
+                          type="text"
+                          value={subject.name}
+                          readOnly
+                        />
+                        <input
+                          type="number"
+                          name="score"
+                          value={subject.score}
+                          onChange={(e) => handleInputChange(e, index)}
+                          required
+                        />
+                        <input
+                          type="number"
+                          name="fullScore"
+                          value={subject.fullScore}
+                          onChange={(e) => handleInputChange(e, index)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button type="submit" className="submit-button">添加</button>
+              </form>
+            </div>
+          </section>
+        )}
+
+        {/* 编辑成绩表单 */}
+        {showEditForm && currentExam && (
+          <section className="data-manager">
+            <div className="card">
+              <h3>✏️ 编辑成绩</h3>
+              <form onSubmit={handleEditSubmit}>
+                <div className="form-group">
+                  <label>年级</label>
+                  <select
+                    name="grade"
+                    value={currentExam.grade}
+                    onChange={handleEditInputChange}
+                    required
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(grade => (
+                      <option key={grade} value={grade}>{grade}年级</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>学期</label>
+                  <select
+                    name="semester"
+                    value={currentExam.semester}
+                    onChange={handleEditInputChange}
+                    required
+                  >
+                    <option value={1}>上学期</option>
+                    <option value={2}>下学期</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>考试类型</label>
+                  <select
+                    name="examType"
+                    value={currentExam.examType}
+                    onChange={handleEditInputChange}
+                    required
+                  >
+                    <option value="midterm">期中考试</option>
+                    <option value="final">期末考试</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>考试名称</label>
+                  <input
+                    type="text"
+                    name="examName"
+                    value={currentExam.examName}
+                    readOnly
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>考试日期</label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={currentExam.date}
+                    onChange={handleEditInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>科目成绩</label>
+                  {currentExam.subjects.map((subject: any, index: number) => (
+                    <div key={subject.name} className="subject-form">
+                      <div className="subject-form-row">
+                        <input
+                          type="text"
+                          value={subject.name}
+                          readOnly
+                        />
+                        <input
+                          type="number"
+                          name="score"
+                          value={subject.score}
+                          onChange={(e) => handleEditInputChange(e, index)}
+                          required
+                        />
+                        <input
+                          type="number"
+                          name="fullScore"
+                          value={subject.fullScore}
+                          onChange={(e) => handleEditInputChange(e, index)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button type="submit" className="submit-button">保存</button>
+              </form>
+            </div>
+          </section>
+        )}
+
+        <section className="data-manager">
+          <div className="card">
+            <h3>📝 成绩列表</h3>
+            <div className="score-list">
+              {data.scores.map((exam) => (
+                <div key={exam.id} className="score-item">
+                  <div className="score-item-header">
+                    <h4>{exam.examName}</h4>
+                    <div className="score-item-actions">
+                      <button className="edit-button" onClick={() => handleEdit(exam)}>编辑</button>
+                      <button className="delete-button" onClick={() => handleDelete(exam.id)}>删除</button>
+                    </div>
+                  </div>
+                  <div className="score-item-info">
+                    <p><span>日期:</span> {exam.date}</p>
+                    <p><span>年级:</span> {exam.grade}年级</p>
+                    <p><span>学期:</span> {exam.semester === 1 ? '上学期' : '下学期'}</p>
+                    <p><span>考试类型:</span> {exam.examType === 'midterm' ? '期中考试' : '期末考试'}</p>
+                  </div>
+                  <div className="subjects-list">
+                    <h5>科目成绩:</h5>
+                    <ul>
+                      {exam.subjects.map((sub) => (
+                        <li key={sub.name}>
+                          <span>{sub.name}:</span> {sub.score}/{sub.fullScore}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="add-button" onClick={handleAdd}>添加成绩</button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   const grades = [...new Set(data.scores.map((s) => s.grade))].sort((a, b) => b - a);
   const subjects = [...new Set(data.scores.flatMap((s) => s.subjects.map((sub) => sub.name)))];
   const filteredScores = selectedGrade
@@ -833,7 +1303,12 @@ function App() {
       <header className="header">
         <div className="header-top">
           <h1>📊 {data.student.name} 成绩追踪</h1>
-          <button className="logout-button" onClick={handleLogout}>退出登录</button>
+          <div className="header-buttons">
+            <button className="manage-button" onClick={() => {
+              setShowDataManager(!showDataManager);
+            }}>数据维护</button>
+            <button className="logout-button" onClick={handleLogout}>退出登录</button>
+          </div>
         </div>
         <p className="subtitle">当前年级: {data.student.currentGrade}年级 | 教育阶段: {data.student.educationStages}</p>
       </header>

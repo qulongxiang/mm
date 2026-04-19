@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { sign, verify } from "hono/jwt";
+import { cors } from "hono/cors";
 
 interface Env {
   DB: D1Database;
@@ -7,6 +8,13 @@ interface Env {
 }
 
 const app = new Hono<{ Bindings: Env; Variables: { userId: number } }>();
+
+// 添加CORS中间件
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Authorization', 'Content-Type']
+}));
 
 // 中间件：验证用户身份
 async function authMiddleware(c: any, next: any) {
@@ -138,6 +146,106 @@ app.get("/api/scores", authMiddleware, async (c) => {
   } catch (error) {
     console.error("Database query error:", error);
     return c.json({ error: "Failed to fetch scores" }, 500);
+  }
+});
+
+// 新增考试成绩
+app.post("/api/scores", authMiddleware, async (c) => {
+  try {
+    const userId = c.get("userId");
+    const { grade, semester, examType, examName, date, subjects } = await c.req.json();
+    
+    // 生成考试ID
+    const examId = `exam_${Date.now()}_${userId}`;
+    
+    // 插入考试记录
+    await c.env.DB.prepare(
+      "INSERT INTO exams (id, student_id, grade, semester, examType, examName, date) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).bind(examId, userId, grade, semester, examType, examName, date).run();
+    
+    // 插入科目成绩记录
+    for (const subject of subjects) {
+      await c.env.DB.prepare(
+        "INSERT INTO subjects (exam_id, name, score, fullScore) VALUES (?, ?, ?, ?)"
+      ).bind(examId, subject.name, subject.score, subject.fullScore).run();
+    }
+    
+    return c.json({ success: true, id: examId, message: "成绩添加成功" });
+  } catch (error) {
+    console.error("Database insert error:", error);
+    return c.json({ error: "Failed to add score" }, 500);
+  }
+});
+
+// 修改考试成绩
+app.put("/api/scores/:id", authMiddleware, async (c) => {
+  try {
+    const userId = c.get("userId");
+    const examId = c.req.param("id");
+    const { grade, semester, examType, examName, date, subjects } = await c.req.json();
+    
+    // 检查考试是否属于当前用户
+    const examCheck = await c.env.DB.prepare(
+      "SELECT * FROM exams WHERE id = ? AND student_id = ?"
+    ).bind(examId, userId).all();
+    
+    if (examCheck.results.length === 0) {
+      return c.json({ error: "考试记录不存在或无权修改" }, 404);
+    }
+    
+    // 更新考试记录
+    await c.env.DB.prepare(
+      "UPDATE exams SET grade = ?, semester = ?, examType = ?, examName = ?, date = ? WHERE id = ?"
+    ).bind(grade, semester, examType, examName, date, examId).run();
+    
+    // 删除原有的科目成绩
+    await c.env.DB.prepare(
+      "DELETE FROM subjects WHERE exam_id = ?"
+    ).bind(examId).run();
+    
+    // 重新插入科目成绩
+    for (const subject of subjects) {
+      await c.env.DB.prepare(
+        "INSERT INTO subjects (exam_id, name, score, fullScore) VALUES (?, ?, ?, ?)"
+      ).bind(examId, subject.name, subject.score, subject.fullScore).run();
+    }
+    
+    return c.json({ success: true, message: "成绩修改成功" });
+  } catch (error) {
+    console.error("Database update error:", error);
+    return c.json({ error: "Failed to update score" }, 500);
+  }
+});
+
+// 删除考试成绩
+app.delete("/api/scores/:id", authMiddleware, async (c) => {
+  try {
+    const userId = c.get("userId");
+    const examId = c.req.param("id");
+    
+    // 检查考试是否属于当前用户
+    const examCheck = await c.env.DB.prepare(
+      "SELECT * FROM exams WHERE id = ? AND student_id = ?"
+    ).bind(examId, userId).all();
+    
+    if (examCheck.results.length === 0) {
+      return c.json({ error: "考试记录不存在或无权删除" }, 404);
+    }
+    
+    // 删除科目成绩
+    await c.env.DB.prepare(
+      "DELETE FROM subjects WHERE exam_id = ?"
+    ).bind(examId).run();
+    
+    // 删除考试记录
+    await c.env.DB.prepare(
+      "DELETE FROM exams WHERE id = ?"
+    ).bind(examId).run();
+    
+    return c.json({ success: true, message: "成绩删除成功" });
+  } catch (error) {
+    console.error("Database delete error:", error);
+    return c.json({ error: "Failed to delete score" }, 500);
   }
 });
 
