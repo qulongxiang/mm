@@ -494,6 +494,10 @@ body {
   text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
 }
 
+.advanced-analysis .card {
+  margin-bottom: 20px;
+}
+
 /* 达标率统计 */
 .achievement-rates {
   display: flex;
