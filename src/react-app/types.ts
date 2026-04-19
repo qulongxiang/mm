@@ -73,6 +73,8 @@ export interface WeakPoint {
 export interface LearningCurve {
   acceleration: number;
   trend: string;
+  firstHalfImprovement?: number;
+  secondHalfImprovement?: number;
 }
 
 export interface SemesterComparison {

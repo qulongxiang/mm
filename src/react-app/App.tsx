@@ -163,7 +163,7 @@ function App() {
           balance: { imbalance: 0, weakestSubject: '', strongestSubject: '', subjectDetails: [] },
           achievementRates: { excellent: 0, good: 0, pass: 0 },
           weakPoints: [],
-          learningCurve: { acceleration: 0, trend: '稳定' },
+          learningCurve: { acceleration: 0, trend: '稳定', firstHalfImprovement: undefined, secondHalfImprovement: undefined },
           semesterComparison: { first: 0, second: 0 }
         };
       }
@@ -324,11 +324,13 @@ function App() {
       // 新增：学习曲线斜率分析
       const examAverages = sorted.map(exam => {
         const avg = exam.subjects.reduce((sum, s) => sum + s.score / s.fullScore * 100, 0) / exam.subjects.length;
-        return avg;
+        return Math.round(avg * 100) / 100;
       });
       
       let acceleration = 0;
       let curveTrend = '稳定';
+      let firstHalfImprovement: number | undefined;
+      let secondHalfImprovement: number | undefined;
       
       if (examAverages.length >= 3) {
         // 计算前半段和后半段的平均进步速度
@@ -336,16 +338,19 @@ function App() {
         const firstHalf = examAverages.slice(0, midPoint);
         const secondHalf = examAverages.slice(midPoint);
         
-        const firstHalfImprovement = (firstHalf[firstHalf.length - 1] - firstHalf[0]) / firstHalf.length;
-        const secondHalfImprovement = (secondHalf[secondHalf.length - 1] - secondHalf[0]) / secondHalf.length;
+        firstHalfImprovement = Math.round(((firstHalf[firstHalf.length - 1] - firstHalf[0]) / firstHalf.length) * 100) / 100;
+        secondHalfImprovement = Math.round(((secondHalf[secondHalf.length - 1] - secondHalf[0]) / secondHalf.length) * 100) / 100;
         
         acceleration = Math.round((secondHalfImprovement - firstHalfImprovement) * 100) / 100;
-        curveTrend = acceleration > 2 ? '加速进步' : acceleration > 0 ? '稳步进步' : acceleration > -2 ? '进步放缓' : '需要关注';
+        // 调整趋势判断逻辑
+        curveTrend = acceleration > 0.5 ? '加速进步' : acceleration > 0 ? '稳步进步' : acceleration > -0.5 ? '进步放缓' : '需要关注';
       }
       
       const learningCurve = {
         acceleration,
-        trend: curveTrend
+        trend: curveTrend,
+        firstHalfImprovement,
+        secondHalfImprovement
       };
 
       // 新增：学期对比分析
@@ -1194,22 +1199,35 @@ function App() {
           <div className="card">
             <h3>📈 学习曲线分析</h3>
             <div className="learning-curve">
-              <div className="curve-stat">
-                <span className="stat-label">进步加速度</span>
-                <span className={`stat-value ${analysis.learningCurve.acceleration > 0 ? 'positive' : 'negative'}`}>
-                  {analysis.learningCurve.acceleration >= 0 ? '+' : ''}{analysis.learningCurve.acceleration}
-                </span>
+              <div className="curve-stats">
+                <div className="curve-stat">
+                  <span className="stat-label">进步加速度</span>
+                  <span className={`stat-value ${analysis.learningCurve.acceleration > 0 ? 'positive' : 'negative'}`}>
+                    {analysis.learningCurve.acceleration >= 0 ? '+' : ''}{analysis.learningCurve.acceleration}
+                  </span>
+                </div>
+                <div className="curve-stat">
+                  <span className="stat-label">当前趋势</span>
+                  <span className={`trend-badge ${analysis.learningCurve.trend === '加速进步' ? 'positive' : analysis.learningCurve.trend === '稳步进步' ? 'good' : analysis.learningCurve.trend === '进步放缓' ? 'warning' : 'danger'}`}>
+                    {analysis.learningCurve.trend}
+                  </span>
+                </div>
               </div>
-              <div className="curve-stat">
-                <span className="stat-label">当前趋势</span>
-                <span className={`trend-badge ${
-                  analysis.learningCurve.trend === '加速进步' ? 'positive' :
-                  analysis.learningCurve.trend === '稳步进步' ? 'good' :
-                  analysis.learningCurve.trend === '进步放缓' ? 'warning' : 'danger'
-                }`}>
-                  {analysis.learningCurve.trend}
-                </span>
+              
+              <div className="curve-details">
+                <h4>📊 进步速度分析</h4>
+                <div className="curve-values">
+                  <div className="curve-value-item">
+                    <span className="value-label">前半段平均进步</span>
+                    <span className="value-data">{analysis.learningCurve.firstHalfImprovement !== undefined ? (analysis.learningCurve.firstHalfImprovement >= 0 ? '+' : '') + analysis.learningCurve.firstHalfImprovement : 'N/A'}</span>
+                  </div>
+                  <div className="curve-value-item">
+                    <span className="value-label">后半段平均进步</span>
+                    <span className="value-data">{analysis.learningCurve.secondHalfImprovement !== undefined ? (analysis.learningCurve.secondHalfImprovement >= 0 ? '+' : '') + analysis.learningCurve.secondHalfImprovement : 'N/A'}</span>
+                  </div>
+                </div>
               </div>
+              
               <p className="curve-comment">
                 {analysis.learningCurve.trend === '加速进步' 
                   ? '🚀 学习状态良好，进步速度在加快' 
@@ -1219,6 +1237,21 @@ function App() {
                   ? '⚠️ 进步速度有所放缓，需要调整学习方法' 
                   : '❗ 学习状态需要关注，建议及时干预'}
               </p>
+              
+              <div className="curve-description">
+                <h4>📝 计算方法</h4>
+                <p>1. 将考试历史数据分为前后两个半段</p>
+                <p>2. 计算前半段的平均进步速度：(前半段末平均分 - 前半段初平均分) / 考试次数</p>
+                <p>3. 计算后半段的平均进步速度：(后半段末平均分 - 后半段初平均分) / 考试次数</p>
+                <p>4. 进步加速度 = 后半段平均进步 - 前半段平均进步</p>
+                <p>5. 根据加速度值评估趋势：</p>
+                <ul>
+                  <li>加速度 &gt; 0.5：加速进步</li>
+                  <li>0 &lt; 加速度 ≤ 0.5：稳步进步</li>
+                  <li>-0.5 &lt; 加速度 ≤ 0：进步放缓</li>
+                  <li>加速度 ≤ -0.5：需要关注</li>
+                </ul>
+              </div>
             </div>
           </div>
 
