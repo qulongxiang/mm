@@ -298,6 +298,46 @@ function App() {
     }
   };
 
+  // 处理删除科目
+  const handleRemoveSubject = (index: number, isEdit: boolean) => {
+    if (isEdit && currentExam) {
+      setCurrentExam(prev => {
+        const newSubjects = prev.subjects.filter((_, i) => i !== index);
+        return {
+          ...prev,
+          subjects: newSubjects
+        };
+      });
+    } else {
+      setNewExam(prev => {
+        const newSubjects = prev.subjects.filter((_, i) => i !== index);
+        return {
+          ...prev,
+          subjects: newSubjects
+        };
+      });
+    }
+  };
+
+  // 处理添加科目
+  const handleAddSubject = (isEdit: boolean) => {
+    if (isEdit && currentExam) {
+      setCurrentExam(prev => {
+        return {
+          ...prev,
+          subjects: [...prev.subjects, { name: '新科目', score: 0, fullScore: 100 }]
+        };
+      });
+    } else {
+      setNewExam(prev => {
+        return {
+          ...prev,
+          subjects: [...prev.subjects, { name: '新科目', score: 0, fullScore: 100 }]
+        };
+      });
+    }
+  };
+
   // 处理编辑表单输入变化
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, index?: number) => {
     const { name, value } = e.target;
@@ -991,29 +1031,80 @@ function App() {
           <div className="header-top">
             <h1>📊 数据维护</h1>
             <div className="header-buttons">
-              {showAddForm || showEditForm ? (
-                <button className="manage-button" onClick={() => {
-                  setShowAddForm(false);
-                  setShowEditForm(false);
-                  setCurrentExam(null);
-                }}>取消</button>
-              ) : (
-                <button className="manage-button" onClick={() => {
-                  setShowDataManager(false);
-                }}>返回</button>
-              )}
+              <button className="manage-button" onClick={() => {
+                setShowDataManager(false);
+              }}>返回</button>
               <button className="logout-button" onClick={handleLogout}>退出登录</button>
             </div>
           </div>
           <p className="subtitle">管理 {data.student.name} 的成绩数据</p>
         </header>
 
-        {/* 添加成绩表单 */}
+        <section className="data-manager">
+          <div className="card">
+            <h3>📝 成绩列表</h3>
+            <div className="score-list">
+              {data.scores.map((exam) => (
+                <div key={exam.id} className="score-item">
+                  <div className="score-item-header">
+                    <h4>{exam.examName}</h4>
+                    <div className="score-item-actions">
+                      <button className="edit-button" onClick={() => handleEdit(exam)}>编辑</button>
+                      <button className="delete-button" onClick={() => handleDelete(exam.id)}>删除</button>
+                    </div>
+                  </div>
+                  <div className="score-item-info">
+                    <p><span>日期:</span> {exam.date}</p>
+                    <p><span>年级:</span> {exam.grade}年级</p>
+                    <p><span>学期:</span> {exam.semester === 1 ? '上学期' : '下学期'}</p>
+                    <p><span>考试类型:</span> {exam.examType === 'midterm' ? '期中考试' : '期末考试'}</p>
+                  </div>
+                  <div className="subjects-list">
+                    <h5>科目成绩:</h5>
+                    <ul>
+                      {exam.subjects.map((sub) => (
+                        <li key={sub.name}>
+                          <span>{sub.name}:</span> {sub.score}/{sub.fullScore}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="add-button" onClick={handleAdd}>添加成绩</button>
+          </div>
+        </section>
+
+        {/* 添加成绩弹出层 */}
         {showAddForm && (
-          <section className="data-manager">
-            <div className="card">
-              <h3>➕ 添加成绩</h3>
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>➕ 添加成绩</h3>
+                <button className="modal-close" onClick={() => {
+                  setShowAddForm(false);
+                  setNewExam({
+                    grade: 1,
+                    semester: 1,
+                    examType: 'midterm',
+                    examName: '1年级上学期期中考试',
+                    date: '',
+                    subjects: [{ name: '语文', score: 0, fullScore: 100 }, { name: '数学', score: 0, fullScore: 100 }, { name: '英语', score: 0, fullScore: 100 }]
+                  });
+                }}>×</button>
+              </div>
               <form onSubmit={handleAddSubmit}>
+                <div className="form-group">
+                  <label>考试名称</label>
+                  <input
+                    type="text"
+                    name="examName"
+                    value={newExam.examName}
+                    readOnly
+                    required
+                  />
+                </div>
                 <div className="form-group">
                   <label>年级</label>
                   <select
@@ -1052,16 +1143,6 @@ function App() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>考试名称</label>
-                  <input
-                    type="text"
-                    name="examName"
-                    value={newExam.examName}
-                    readOnly
-                    required
-                  />
-                </div>
-                <div className="form-group">
                   <label>考试日期</label>
                   <input
                     type="date"
@@ -1072,7 +1153,10 @@ function App() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>科目成绩</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <label>科目成绩</label>
+                    <button type="button" className="add-subject-button" onClick={() => handleAddSubject(false)}>添加科目</button>
+                  </div>
                   {newExam.subjects.map((subject, index) => (
                     <div key={subject.name} className="subject-form">
                       <div className="subject-form-row">
@@ -1095,22 +1179,59 @@ function App() {
                           onChange={(e) => handleInputChange(e, index)}
                           required
                         />
+                        <button 
+                          type="button" 
+                          className="remove-subject-button" 
+                          onClick={() => handleRemoveSubject(index, false)}
+                          disabled={newExam.subjects.length <= 1}
+                        >
+                          删除
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <button type="submit" className="submit-button">添加</button>
+                <div className="modal-footer">
+                  <button type="button" className="cancel-button" onClick={() => {
+                    setShowAddForm(false);
+                    setNewExam({
+                      grade: 1,
+                      semester: 1,
+                      examType: 'midterm',
+                      examName: '1年级上学期期中考试',
+                      date: '',
+                      subjects: [{ name: '语文', score: 0, fullScore: 100 }, { name: '数学', score: 0, fullScore: 100 }, { name: '英语', score: 0, fullScore: 100 }]
+                    });
+                  }}>取消</button>
+                  <button type="submit" className="submit-button">添加</button>
+                </div>
               </form>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* 编辑成绩表单 */}
+        {/* 编辑成绩弹出层 */}
         {showEditForm && currentExam && (
-          <section className="data-manager">
-            <div className="card">
-              <h3>✏️ 编辑成绩</h3>
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>✏️ 编辑成绩</h3>
+                <button className="modal-close" onClick={() => {
+                  setShowEditForm(false);
+                  setCurrentExam(null);
+                }}>×</button>
+              </div>
               <form onSubmit={handleEditSubmit}>
+                <div className="form-group">
+                  <label>考试名称</label>
+                  <input
+                    type="text"
+                    name="examName"
+                    value={currentExam.examName}
+                    readOnly
+                    required
+                  />
+                </div>
                 <div className="form-group">
                   <label>年级</label>
                   <select
@@ -1149,16 +1270,6 @@ function App() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>考试名称</label>
-                  <input
-                    type="text"
-                    name="examName"
-                    value={currentExam.examName}
-                    readOnly
-                    required
-                  />
-                </div>
-                <div className="form-group">
                   <label>考试日期</label>
                   <input
                     type="date"
@@ -1169,7 +1280,10 @@ function App() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>科目成绩</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <label>科目成绩</label>
+                    <button type="button" className="add-subject-button" onClick={() => handleAddSubject(true)}>添加科目</button>
+                  </div>
                   {currentExam.subjects.map((subject: any, index: number) => (
                     <div key={subject.name} className="subject-form">
                       <div className="subject-form-row">
@@ -1192,51 +1306,29 @@ function App() {
                           onChange={(e) => handleEditInputChange(e, index)}
                           required
                         />
+                        <button 
+                          type="button" 
+                          className="remove-subject-button" 
+                          onClick={() => handleRemoveSubject(index, true)}
+                          disabled={currentExam.subjects.length <= 1}
+                        >
+                          删除
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <button type="submit" className="submit-button">保存</button>
+                <div className="modal-footer">
+                  <button type="button" className="cancel-button" onClick={() => {
+                    setShowEditForm(false);
+                    setCurrentExam(null);
+                  }}>取消</button>
+                  <button type="submit" className="submit-button">保存</button>
+                </div>
               </form>
             </div>
-          </section>
-        )}
-
-        <section className="data-manager">
-          <div className="card">
-            <h3>📝 成绩列表</h3>
-            <div className="score-list">
-              {data.scores.map((exam) => (
-                <div key={exam.id} className="score-item">
-                  <div className="score-item-header">
-                    <h4>{exam.examName}</h4>
-                    <div className="score-item-actions">
-                      <button className="edit-button" onClick={() => handleEdit(exam)}>编辑</button>
-                      <button className="delete-button" onClick={() => handleDelete(exam.id)}>删除</button>
-                    </div>
-                  </div>
-                  <div className="score-item-info">
-                    <p><span>日期:</span> {exam.date}</p>
-                    <p><span>年级:</span> {exam.grade}年级</p>
-                    <p><span>学期:</span> {exam.semester === 1 ? '上学期' : '下学期'}</p>
-                    <p><span>考试类型:</span> {exam.examType === 'midterm' ? '期中考试' : '期末考试'}</p>
-                  </div>
-                  <div className="subjects-list">
-                    <h5>科目成绩:</h5>
-                    <ul>
-                      {exam.subjects.map((sub) => (
-                        <li key={sub.name}>
-                          <span>{sub.name}:</span> {sub.score}/{sub.fullScore}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button className="add-button" onClick={handleAdd}>添加成绩</button>
           </div>
-        </section>
+        )}
       </div>
     );
   }

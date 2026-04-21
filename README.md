@@ -1,8 +1,32 @@
 # React + Vite + Hono + Cloudflare Workers
-# 运行
-```
+
 npm config set registry https://registry.npmmirror.com/
 npm install
+- 初始化数据库 ： 
+npx wrangler d1 execute mm --file=schema.sql
+- 构建项目 ： 
+npm run build
+- 启动服务 ：
+## npm run dev
+- 运行环境 ：Vite 开发服务器
+- 默认端口 ： http://localhost:5173
+- 主要功能 ：
+  - 提供热模块替换 (HMR)，修改代码后立即看到变化
+  - 适合前端开发和快速迭代
+  - 构建速度快，开发体验好
+  - 不模拟 Cloudflare Workers 环境
+## npx wrangler dev
+- 运行环境 ：Cloudflare Workers 本地模拟环境
+- 默认端口 ： http://127.0.0.1:8789
+- 主要功能 ：
+  - 模拟真实的 Cloudflare Workers 生产环境
+  - 包含 D1 数据库等 Cloudflare 特有服务的本地模拟
+  - 适合测试与 Cloudflare 服务集成的功能
+  - 更接近生产环境的行为
+本地数据查询或新增：
+npx wrangler d1 execute mm --command " select * from students"
+npx wrangler d1 execute mm --command "INSERT INTO students (email, password, name) VALUES ('test@example.com', 'password123', '测试用户')"
+
 npm run preview
 
 # 本地运行环境更接近
