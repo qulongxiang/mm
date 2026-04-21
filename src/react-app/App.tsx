@@ -116,6 +116,7 @@ function App() {
     date: '',
     subjects: [{ name: '语文', score: 0, fullScore: 100 }, { name: '数学', score: 0, fullScore: 100 }, { name: '英语', score: 0, fullScore: 100 }]
   });
+  const [isSaving, setIsSaving] = useState(false);
   const semesterChartRef = useRef<HTMLDivElement>(null);
   const subjectChartRef = useRef<HTMLDivElement>(null);
   const yearlyChartRef = useRef<HTMLDivElement>(null);
@@ -185,6 +186,7 @@ function App() {
       }
     }
     
+    setIsSaving(true);
     try {
       const response = await fetch('/api/scores', {
         method: 'POST',
@@ -217,6 +219,8 @@ function App() {
       }
     } catch (error) {
       console.error('添加失败:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -235,6 +239,7 @@ function App() {
       }
     }
     
+    setIsSaving(true);
     try {
       const response = await fetch(`/api/scores/${currentExam.id}`, {
         method: 'PUT',
@@ -259,6 +264,8 @@ function App() {
       }
     } catch (error) {
       console.error('编辑失败:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1203,7 +1210,16 @@ function App() {
                       subjects: [{ name: '语文', score: 0, fullScore: 100 }, { name: '数学', score: 0, fullScore: 100 }, { name: '英语', score: 0, fullScore: 100 }]
                     });
                   }}>取消</button>
-                  <button type="submit" className="submit-button">添加</button>
+                  <button type="submit" className="submit-button" disabled={isSaving}>
+                    {isSaving ? (
+                      <span className="loading-button">
+                        <span className="loading-spinner"></span>
+                        保存中...
+                      </span>
+                    ) : (
+                      '添加'
+                    )}
+                  </button>
                 </div>
               </form>
             </div>
@@ -1323,7 +1339,16 @@ function App() {
                     setShowEditForm(false);
                     setCurrentExam(null);
                   }}>取消</button>
-                  <button type="submit" className="submit-button">保存</button>
+                  <button type="submit" className="submit-button" disabled={isSaving}>
+                    {isSaving ? (
+                      <span className="loading-button">
+                        <span className="loading-spinner"></span>
+                        保存中...
+                      </span>
+                    ) : (
+                      '保存'
+                    )}
+                  </button>
                 </div>
               </form>
             </div>
