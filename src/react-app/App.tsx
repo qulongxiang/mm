@@ -1086,7 +1086,7 @@ function App() {
         {/* 添加成绩弹出层 */}
         {showAddForm && (
           <div className="modal-overlay">
-            <div className="modal-content">
+            <div className="modal-content" style={{ position: 'relative' }}>
               <div className="modal-header">
                 <h3>➕ 添加成绩</h3>
                 <button className="modal-close" onClick={() => {
@@ -1101,6 +1101,14 @@ function App() {
                   });
                 }}>×</button>
               </div>
+              {isSaving && (
+                <div className="form-overlay">
+                  <div className="form-overlay-content">
+                    <div className="form-overlay-spinner"></div>
+                    <div className="form-overlay-text">保存中...</div>
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleAddSubmit}>
                 <div className="form-group">
                   <label>考试名称</label>
@@ -1229,7 +1237,7 @@ function App() {
         {/* 编辑成绩弹出层 */}
         {showEditForm && currentExam && (
           <div className="modal-overlay">
-            <div className="modal-content">
+            <div className="modal-content" style={{ position: 'relative' }}>
               <div className="modal-header">
                 <h3>✏️ 编辑成绩</h3>
                 <button className="modal-close" onClick={() => {
@@ -1237,6 +1245,14 @@ function App() {
                   setCurrentExam(null);
                 }}>×</button>
               </div>
+              {isSaving && (
+                <div className="form-overlay">
+                  <div className="form-overlay-content">
+                    <div className="form-overlay-spinner"></div>
+                    <div className="form-overlay-text">保存中...</div>
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleEditSubmit}>
                 <div className="form-group">
                   <label>考试名称</label>

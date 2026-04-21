@@ -2160,6 +2160,10 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cancel-button:hover {
@@ -2177,6 +2181,45 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 表单遮罩样式 */
+.form-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 16px;
+}
+
+.form-overlay-content {
+  text-align: center;
+}
+
+.form-overlay-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(102, 126, 234, 0.3);
+  border-radius: 50%;
+  border-top-color: #667eea;
+  animation: spin 1s ease-in-out infinite;
+  margin: 0 auto 16px;
+}
+
+.form-overlay-text {
+  color: #667eea;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .submit-button:hover {
