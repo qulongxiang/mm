@@ -301,16 +301,16 @@ function App() {
   // 处理删除科目
   const handleRemoveSubject = (index: number, isEdit: boolean) => {
     if (isEdit && currentExam) {
-      setCurrentExam(prev => {
-        const newSubjects = prev.subjects.filter((_, i) => i !== index);
+      setCurrentExam((prev: any) => {
+        const newSubjects = prev.subjects.filter((_: any, i: number) => i !== index);
         return {
           ...prev,
           subjects: newSubjects
         };
       });
     } else {
-      setNewExam(prev => {
-        const newSubjects = prev.subjects.filter((_, i) => i !== index);
+      setNewExam((prev: any) => {
+        const newSubjects = prev.subjects.filter((_: any, i: number) => i !== index);
         return {
           ...prev,
           subjects: newSubjects
@@ -322,14 +322,14 @@ function App() {
   // 处理添加科目
   const handleAddSubject = (isEdit: boolean) => {
     if (isEdit && currentExam) {
-      setCurrentExam(prev => {
+      setCurrentExam((prev: any) => {
         return {
           ...prev,
           subjects: [...prev.subjects, { name: '新科目', score: 0, fullScore: 100 }]
         };
       });
     } else {
-      setNewExam(prev => {
+      setNewExam((prev: any) => {
         return {
           ...prev,
           subjects: [...prev.subjects, { name: '新科目', score: 0, fullScore: 100 }]
