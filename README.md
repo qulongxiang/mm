@@ -1,4 +1,4 @@
-# React + Vite + Hono + Cloudflare Workers aa nn
+# React + Vite + Hono + Cloudflare Workers aa nn cc
 
 npm config set registry https://registry.npmmirror.com/
 npm install
