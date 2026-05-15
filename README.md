@@ -4,8 +4,6 @@ npm config set registry https://registry.npmmirror.com/
 npm install
 - 初始化数据库 ： 
 npx wrangler d1 execute mm --file=schema.sql
-- 构建项目 ： 
-npm run build
 - 启动服务 ：
 ## npm run dev
 - 运行环境 ：Vite 开发服务器
