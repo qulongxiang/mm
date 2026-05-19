@@ -1,8 +1,4 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ===== 全局重置（仅最基础样式，不包含任何页面特定样式） ===== */
 
 body {
   margin: 0;
